@@ -11,8 +11,21 @@ __v0_jsx-dev-runtime.ts
 
 # Common ignores
 node_modules
-.next/
 .DS_Store
 _legacy_v2/
 out/
 *.tsbuildinfo
+
+# Vite / Vitest
+dist/
+coverage/
+.vite/
+
+# Playwright
+apps/e2e/test-results/
+apps/e2e/playwright-report/
+apps/e2e/blob-report/
+apps/e2e/.playwright/
+
+# 逐像素门禁每次运行都会重写 baseline / target 截图
+apps/e2e/visual-report/
