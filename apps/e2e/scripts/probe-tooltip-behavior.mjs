@@ -70,13 +70,16 @@ const leftovers = await page.evaluate(() => [...document.querySelectorAll('.app-
 check('应用内不再有原生 title 属性（antd Segmented 自带的不算）', leftovers.length === 0, leftovers.slice(0, 3).join(' | '))
 
 // ---------- 2. 悬停延迟与文案 ----------
+// 侧栏导航已按要求去掉悬停提示，这里改用任务卡的负责人提示做样本锚点。
+const sample = page.locator('.calm-task-card').first().locator('.calm-card-bottom > span').first()
+const sampleText = (await sample.innerText()).trim()
 const t0 = Date.now()
-await page.locator('.nav-item:has-text("任务中心")').first().hover()
+await sample.hover()
 await tooltip.waitFor({ timeout: 3000 })
 const delay = Date.now() - t0
-const nav = await hoverAnchor(page.locator('.nav-item:has-text("任务中心")'))
+const nav = await hoverAnchor(sample)
 check('悬停后出现提示（有延迟，且远快于原生 1s）', delay >= 60 && delay < 900, `${delay}ms`)
-check('提示文案等于原 title 文案', nav.text === '所有工作的统一入口', JSON.stringify(nav.text))
+check('提示文案等于原 title 文案', nav.text === `负责人：${sampleText}`, JSON.stringify(nav.text))
 check('提示与锚点通过 aria-describedby 关联', nav.described.includes(nav.id), `${nav.described} / ${nav.id}`)
 
 // ---------- 3. 几何：水平居中、位于锚点正上方、留小间隙 ----------
@@ -102,6 +105,21 @@ const afterLeave = await page.evaluate(() => ({
 }))
 check('移开后提示节点被移除', afterLeave.count === 0 && afterLeave.open === 0, JSON.stringify(afterLeave))
 check('移开后锚点不再带 aria-describedby', afterLeave.described === 0, String(afterLeave.described))
+
+// ---------- 5b. 侧栏导航不再有悬停提示 ----------
+const sidebarItems = page.locator('button.workspace, button.nav-item')
+const sidebarCount = await sidebarItems.count()
+const sidebarHints = []
+for (let i = 0; i < sidebarCount; i++) {
+  const el = sidebarItems.nth(i)
+  await el.hover()
+  await page.waitForTimeout(300)
+  const shown = await page.locator('.ant-tooltip').count()
+  if (shown) sidebarHints.push(`${(await el.innerText()).trim()}=${shown}`)
+}
+check(`侧栏导航不再出现悬停提示（${sidebarCount} 个入口，含工作区按钮）`, sidebarHints.length === 0, sidebarHints.join(' | '))
+await page.mouse.move(1430, 880)
+await page.waitForTimeout(200)
 
 // ---------- 6. 弹窗内无标签的 Badge 不会渲染空提示；层级关系正确 ----------
 await page.locator('button.calm-task-card').first().click()

@@ -40,7 +40,7 @@ components/surface-modal.tsx  antd Modal 包装（只借对话框语义，DOM �
 components/calm-tabs.tsx      antd Tabs 包装（`.calm-tabs`）
 components/more-menu.tsx      antd Dropdown 包装（`.more-wrap` 里的更多操作菜单）
 components/toaster.tsx        antd message 包装（`.toast`）
-components/tip.tsx             antd Tooltip 包装（原 `title=` 提示，`label` 为空时不渲染）
+components/tip.tsx             antd Tooltip 包装（原 `title=` 提示，`label` 为空时不渲染；侧栏导航不使用）
 components/popover.tsx         antd Popover 包装（受控 + 自补 Escape，导出 ANCHOR_BOTTOM_RIGHT）
 views/                  页面级视图
 styles/design-system.css   全站唯一视觉来源（由原 app/globals.css 迁移：移除 Tailwind，preflight 逐条内联等价）
@@ -103,7 +103,7 @@ styles/antd-theme.ts       ConfigProvider theme token
 | `node scripts/smoke.mjs` | 12 步交互链路 + 无运行时报错 | 全部 PASS |
 | `node scripts/probe-modal-behavior.mjs` | 弹层行为契约（焦点/ESC/遮罩/滚动还原） | 全部 PASS |
 | `node scripts/probe-menu-behavior.mjs` | 菜单行为契约（锚点/菜单项/四个动作/收起/hover/残影） | 全部 PASS |
-| `node scripts/probe-tooltip-behavior.mjs` | 提示行为契约（延迟/文案/关联/定位/外观/层级/残留） | `19/19 项通过` |
+| `node scripts/probe-tooltip-behavior.mjs` | 提示行为契约（延迟/文案/关联/定位/外观/层级/残留 + 侧栏无提示） | `20/20 项通过` |
 | `node scripts/probe-popover-behavior.mjs` | 顶栏面板行为契约（开合/互斥/内外点击/ESC/面板结构/已读/账户动作/遮罩层级） | 全部 PASS |
 | `node scripts/probe-forms-behavior.mjs` | 表单行为契约（校验文案与顺序/范围级联/作废内联确认/取消与合并/链接 Enter 提交/不移动焦点） | 全部 PASS |
 
@@ -136,6 +136,10 @@ styles/antd-theme.ts       ConfigProvider theme token
   **缺一项都无效**；内联 transform 需要 `!important`；只有 `filter` 起作用时单独写 `filter: none`（如 `.ant-tooltip`）。
 - **原生 `title=` 在基线截图里截不到**（OS 自绘），所以「原生 title → antd Tooltip」这类覆盖层**无法做基线逐像素对比**，
   只能靠目标侧的行为契约门禁（`probe-tooltip-behavior.mjs`）覆盖，四层视觉门禁同步保证「没有引入回归」。
+- **侧栏导航（`button.workspace` + 6 个 `button.nav-item`）已按要求去掉悬停提示**，这是**有意偏离原型**的一处：
+  门禁看不出来（悬浮层不进截图 / parity 不比 `title`），不要再把 `hint` 加回去。回归靠 `probe-tooltip-behavior.mjs`
+  的第 5b 组断言（逐个 hover 侧栏入口，要求 `.ant-tooltip` 计数为 0）守住。其余位置的提示照旧保留，
+  该门禁的样本锚点已从导航项改到任务卡的「负责人」提示上。
 - Playwright 的 `.click()` 会把鼠标**留在元素上**。若锚点带 Tooltip，截图会截到提示 ——
   截图前必须 `page.mouse.move(x, y)` 移开并等 200ms 让提示卸载（`visual-states.mjs` 的 `account-popover` 就是踩了这个坑）。
 - `rc-segmented` 会给 `.ant-segmented-item-label` 挂**原生 `title`**，「应用内不再有原生 title」这类断言要排除 `[class*="ant-segmented"]` 后代。
